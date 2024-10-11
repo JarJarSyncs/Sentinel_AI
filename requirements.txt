@@ -5,3 +5,4 @@ git+https://github.com/elliottzheng/batch-face.git@master
 scikit-image
 torch --index-url https://download.pytorch.org/whl/cu124
 torchvision --index-url https://download.pytorch.org/whl/cu124 # May need to install https://aka.ms/vs/17/release/vc_redist.x64.exe <--- This wasn't available in my vm, if you get an error relating to C# libaries or 'fbgemm.dl' this is likely what you need
+tcl-tk # only needed for Mac if your Python doesn't comes with it
