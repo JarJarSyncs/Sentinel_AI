@@ -109,7 +109,7 @@ class DeceptionDetectionUI:
         start_button = ttk.Button(button_frame, text="Start Analysis", command=self.start_analysis, style="TButton")
         start_button.grid(row=0, column=0, padx=20, pady=(10, 5))
 
-        save_button = ttk.Button(button_frame, text="Prediction History", command=self.view_history, style="TButton")
+        save_button = ttk.Button(button_frame, text="Stop Analysis", command=self.stop_analysis, style="TButton")
         save_button.grid(row=1, column=0, padx=20, pady=(10, 10))
 
     def create_statistics_section(self, parent_frame):
@@ -205,9 +205,9 @@ class DeceptionDetectionUI:
             for index, label in enumerate(self.captured_images):
                 label.grid(row=index, column=0, padx=5, pady=(1, 2), sticky="w")  # Update positions
 
-    def view_history(self):
-        """Method to view prediction history (dummy function)."""
-        print("Viewing prediction history...")  # Replace with actual history viewing logic
+    def stop_analysis(self):
+        """Method to stop the analysis (dummy function)."""
+        print("Analysis stopped.")  
 
     def show_frame(self):
         """Handles live video feed updates."""
