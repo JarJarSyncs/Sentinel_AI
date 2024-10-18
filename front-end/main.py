@@ -60,7 +60,7 @@ class DeceptionDetectionUI:
 
     def create_live_video_section(self):
         """Creates the live video feed section."""
-        live_video_frame = ttk.Frame(self.root, padding="0", style="TFrame")
+        live_video_frame = ttk.Frame(self.root, padding="0", style="TFrame", relief="solid", borderwidth=2)
         live_video_frame.grid(row=1, column=0, columnspan=2, padx=10, pady=(10, 10), sticky="nsew")
         live_video_frame.grid_rowconfigure(0, weight=1)
         live_video_frame.grid_columnconfigure(0, weight=1)
@@ -73,7 +73,7 @@ class DeceptionDetectionUI:
 
     def create_evidence_section(self):
         """Creates the captured deceptive actions section."""
-        evidence_frame = ttk.Frame(self.root, padding="0", style="TFrame")
+        evidence_frame = ttk.Frame(self.root, padding="0", style="TFrame", relief="solid", borderwidth=2)
         evidence_frame.grid(row=1, column=2, columnspan=2, padx=10, pady=(10, 10), sticky="nsew")
         evidence_frame.grid_rowconfigure(0, weight=1)
         evidence_frame.grid_columnconfigure(0, weight=1)
@@ -86,7 +86,7 @@ class DeceptionDetectionUI:
 
     def create_button_and_statistics_section(self):
         """Creates a parent frame for the button and statistics bar sections."""
-        button_statistics_frame = ttk.Frame(self.root, padding="0")
+        button_statistics_frame = ttk.Frame(self.root, padding="0", relief="solid", borderwidth=2)
         button_statistics_frame.grid(row=1, column=4, columnspan=2, padx=10, pady=(10, 10), sticky="nsew")
         
         # Create buttons
@@ -107,14 +107,14 @@ class DeceptionDetectionUI:
         button_frame.grid(row=0, column=0, padx=10, sticky="nsew")
 
         start_button = ttk.Button(button_frame, text="Start Analysis", command=self.start_analysis, style="TButton")
-        start_button.grid(row=0, column=0, padx=20, pady=(10, 5))
+        start_button.grid(row=0, column=0, padx=20, pady=(10, 5), ipadx=50, ipady=30)
 
         save_button = ttk.Button(button_frame, text="Stop Analysis", command=self.stop_analysis, style="TButton")
-        save_button.grid(row=1, column=0, padx=20, pady=(10, 10))
+        save_button.grid(row=1, column=0, padx=20, pady=(10, 10), ipadx=50, ipady=30)
 
     def create_statistics_section(self, parent_frame):
         """Creates the statistics bar section."""
-        statistics_frame = ttk.Frame(parent_frame, padding="0", style="TFrame", relief="sunken", borderwidth=1)
+        statistics_frame = ttk.Frame(parent_frame, padding="0", style="TFrame", relief="solid", borderwidth=2)
         statistics_frame.grid(row=4, column=0, padx=10, pady=(10, 10), sticky="nsew")
         statistics_frame.grid_rowconfigure(0, weight=1)
         statistics_frame.grid_columnconfigure(0, weight=1)
@@ -153,7 +153,7 @@ class DeceptionDetectionUI:
 
     def create_deception_score_frame(self, parent_frame):
         """Creates the separate frame for Deception Confidence Score."""
-        score_frame = tk.Frame(parent_frame, bg=self.config.accent_color, relief="raised", bd=1)
+        score_frame = tk.Frame(parent_frame, bg=self.config.accent_color, relief="solid", borderwidth=2)
         score_frame.grid(row=5, column=0, padx=10, pady=(10, 10), sticky="nsew")
         score_frame.grid_rowconfigure(0, weight=1)
         score_frame.grid_columnconfigure(0, weight=1)
