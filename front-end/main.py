@@ -114,7 +114,7 @@ class DeceptionDetectionUI:
 
     def create_statistics_section(self, parent_frame):
         """Creates the statistics bar section."""
-        statistics_frame = ttk.Frame(parent_frame, padding="0", style="TFrame", relief="solid", borderwidth=2)
+        statistics_frame = ttk.Frame(parent_frame, padding="0", style="TFrame", relief="solid", borderwidth=1)
         statistics_frame.grid(row=4, column=0, padx=10, pady=(10, 10), sticky="nsew")
         statistics_frame.grid_rowconfigure(0, weight=1)
         statistics_frame.grid_columnconfigure(0, weight=1)
@@ -153,7 +153,7 @@ class DeceptionDetectionUI:
 
     def create_deception_score_frame(self, parent_frame):
         """Creates the separate frame for Deception Confidence Score."""
-        score_frame = tk.Frame(parent_frame, bg=self.config.accent_color, relief="solid", borderwidth=2)
+        score_frame = tk.Frame(parent_frame, bg=self.config.accent_color, relief="solid", borderwidth=1)
         score_frame.grid(row=5, column=0, padx=10, pady=(10, 10), sticky="nsew")
         score_frame.grid_rowconfigure(0, weight=1)
         score_frame.grid_columnconfigure(0, weight=1)
