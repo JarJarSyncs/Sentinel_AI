@@ -111,6 +111,7 @@ def get_input_data(image, offset_coeff=1) -> dict:
         return None
     return result
 
+
 def draw_eye_axis(img, yaw, pitch, roll, tdx, tdy, size=100):
 
     pitch = pitch * np.pi / 180
@@ -121,5 +122,38 @@ def draw_eye_axis(img, yaw, pitch, roll, tdx, tdy, size=100):
     y = size * (-cos(yaw) * sin(pitch)) + tdy
 
     cv2.line(img, (int(tdx), int(tdy)), (int(x), int(y)), (255, 255, 0), 3)
+
+    return img
+
+def draw_axis(img, yaw, pitch, roll, tdx=None, tdy=None, size = 100):
+
+    pitch = pitch * np.pi / 180
+    yaw = -(yaw * np.pi / 180)
+    roll = roll * np.pi / 180
+
+    if tdx != None and tdy != None:
+        tdx = tdx
+        tdy = tdy
+    else:
+        height, width = img.shape[:2]
+        tdx = width / 2
+        tdy = height / 2
+
+    # X-Axis pointing to right. drawn in red
+    x1 = size * (cos(yaw) * cos(roll)) + tdx
+    y1 = size * (cos(pitch) * sin(roll) + cos(roll) * sin(pitch) * sin(yaw)) + tdy
+
+    # Y-Axis | drawn in green
+    #        v
+    x2 = size * (-cos(yaw) * sin(roll)) + tdx
+    y2 = size * (cos(pitch) * cos(roll) - sin(pitch) * sin(yaw) * sin(roll)) + tdy
+
+    # Z-Axis (out of the screen) drawn in blue
+    x3 = size * (sin(yaw)) + tdx
+    y3 = size * (-cos(yaw) * sin(pitch)) + tdy
+
+    cv2.line(img, (int(tdx), int(tdy)), (int(x1),int(y1)),(0,0,255),4)
+    cv2.line(img, (int(tdx), int(tdy)), (int(x2),int(y2)),(0,255,0),4)
+    cv2.line(img, (int(tdx), int(tdy)), (int(x3),int(y3)),(255,0,0),4)
 
     return img
