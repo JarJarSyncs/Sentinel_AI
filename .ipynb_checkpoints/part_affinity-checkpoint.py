@@ -1,18 +1,14 @@
 import cv2
 import time
 import numpy as np
-#import requests
-#import base64
+import requests
+import base64
 import mediapipe as mp
 import numpy as np
 from batch_face import RetinaFace, LandmarkPredictor, draw_landmarks, Timer
-from live_pose_estimator import SixDRep
+from live_detection.live_pose_estimator import SixDRep
 from mediapipe.python.solutions.pose import PoseLandmark
 from mediapipe.python.solutions.drawing_utils import DrawingSpec
-
-from face_eye_crop import get_input_data, draw_axis
-
-
 
 # Define the face detection and head pose functions
 def get_landmarks(frame, faces):
@@ -97,7 +93,6 @@ for landmark in excluded_pose_landmarks:
 # Open camera
 cap = cv2.VideoCapture(0)
 
-
 # Initialize detectors and pose estimator
 detector = RetinaFace(gpu_id=-1)  # Use CPU
 predictor = LandmarkPredictor(gpu_id=-1)  # Use CPU
@@ -118,49 +113,6 @@ while True:
     black_canvas = np.zeros_like(frame)
 
     loop_time = time.time()
-
-    input_data = get_input_data(frame)  
-
-    if input_data is None or len(input_data) == 0:
-            continue
-    
-    for face in input_data:
-            box = face['box']
-
-            # Get face bounding box coordinates
-            x_min = int(box[0])
-            y_min = int(box[1])
-            x_max = int(box[2])
-            y_max = int(box[3])
-
-            bbox_width = abs(x_max - x_min)
-            bbox_height = abs(y_max - y_min)
-
-            # Adjust the bounding box slightly
-            x_min = max(0, x_min - int(0.2 * bbox_height))
-            y_min = max(0, y_min - int(0.2 * bbox_width))
-            x_max += int(0.2 * bbox_height)
-            y_max += int(0.2 * bbox_width)
-
-            # Get head pose angles
-            hp = face['p_pred_deg']
-            hy = face['y_pred_deg']
-            hr = face['r_pred_deg']
-
-            # Draw head pose axes on the black canvas
-            draw_axis(black_canvas, hy, hp, hr, x_min + int(.5 * (x_max - x_min)), y_min + int(.5 * (y_max - y_min)), size=130)
-
-    #if face_data:
-     #   for face_info in face_data:
-      #      right_eye_img = face_info['image']
-      #      cv2.imshow('Right and Left Eye', right_eye_img)
-
-          # Get head pose angles
-  #          yaw, pitch, roll = face_info['y_pred_deg'], face_info['p_pred_deg'], face_info['r_pred_deg']
-   #         box = face_info['box']
-
-            # Draw the eye axis using the imported draw_eye_axis function
-     #       black_canvas = draw_eye_axis(black_canvas, yaw, pitch, roll, int(box[0]), int(box[1]))
 
     # Calculate the time difference for face detection efficiency
     elapsed_time = time.time() - detect_time
@@ -190,7 +142,6 @@ while True:
 
     # Convert back to BGR for display
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-
 
     # Draw Face, Nose, Mouth connections
     if face_results.multi_face_landmarks:
