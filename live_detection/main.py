@@ -5,6 +5,7 @@ from PIL import Image, ImageTk
 import cv2
 import threading
 import time
+from part_affinity_live import *
 
 class UIConfig:
     """Configuration class for UI styles and colors."""
@@ -168,42 +169,51 @@ class DeceptionDetectionUI:
 
     def start_analysis(self):
         print("Starting Analysis...")  # Replace with actual analysis logic
-        self.capture_mock_images()
+        self.capture_mock_images_with_descriptions()
 
-    def capture_mock_images(self):
-        """Simulate capturing deceptive images and update the evidence section."""
-        # List of mock image paths (replace with actual paths to your images)
-        mock_images = [
-            "test.png",
-            "test2.png",
+    def capture_mock_images_with_descriptions(self):
+        # List of mock image paths and their descriptions
+        mock_images_with_descriptions = [
+            ("test.png", "Scanning Action Detected"),
+            ("test2.png", "Stress Action Detected"),
         ]
 
         # Simulate capturing a new image and appending it to the list
-        for image_path in mock_images:
-            self.update_evidence_display(image_path)
+        for image_path, description in mock_images_with_descriptions:
+            self.update_evidence_display(image_path, description)
 
-    def update_evidence_display(self, image_path):
-        """Update the evidence display with a new image."""
+    def update_evidence_display(self, image_path, description="Action"):
         img = Image.open(image_path)
-        img = img.resize((100, 100))  # Resize image for display
+        img = img.resize((250, 200))  # Resize image for display inside the evidence section
         img_tk = ImageTk.PhotoImage(img)
 
         # Create a new label for each captured image
-        image_label = Label(self.evidence_image.winfo_toplevel(), image=img_tk, bg=self.config.accent_color)
+        image_label = Label(self.evidence_image, image=img_tk, bg=self.config.accent_color)
         image_label.image = img_tk  # Keep a reference to avoid garbage collection
-        row = len(self.captured_images)  
-        image_label.grid(row=row, column=0, padx=5, pady=(1, 2), sticky="w")
 
-        self.captured_images.append(image_label)
+        # Create a corresponding text label below the image using the description, with red text
+        description_label = Label(self.evidence_image, text=description, bg=self.config.accent_color, 
+                                font=self.config.bold_font, fg="red")  # Make the text bold and red
 
-        # Limit the number of displayed images
-        if len(self.captured_images) > 10:  
-            # Remove the oldest image
-            oldest_image_label = self.captured_images.pop(0)  
-            oldest_image_label.grid_forget()  
+        # Place the image and label in the evidence section grid
+        row = len(self.captured_images)
+        image_label.grid(row=row*2, column=0, padx=5, pady=(1, 2), sticky="w")  # Image goes in row
+        description_label.grid(row=row*2+1, column=0, padx=5, pady=(1, 10), sticky="ew")  # Centered with extra padding
 
-            for index, label in enumerate(self.captured_images):
-                label.grid(row=index, column=0, padx=5, pady=(1, 2), sticky="w")  # Update positions
+        # Store the labels so we can later remove them if needed
+        self.captured_images.append((image_label, description_label))
+
+        # Limit the number of displayed images and labels
+        if len(self.captured_images) > 10:
+            # Remove the oldest image and its corresponding label if more than 10
+            oldest_image_label, oldest_description_label = self.captured_images.pop(0)
+            oldest_image_label.grid_forget()
+            oldest_description_label.grid_forget()
+
+            # Update positions of remaining images and labels
+            for index, (image_lbl, desc_lbl) in enumerate(self.captured_images):
+                image_lbl.grid(row=index*2, column=0, padx=5, pady=(1, 2), sticky="w")
+                desc_lbl.grid(row=index*2+1, column=0, padx=5, pady=(1, 10), sticky="ew")
 
     def stop_analysis(self):
         """Method to stop the analysis (dummy function)."""
@@ -211,15 +221,21 @@ class DeceptionDetectionUI:
 
     def show_frame(self):
         """Handles live video feed updates."""
-        ret, frame = self.cap.read()  # Read a frame from the video capture
-        if ret: 
-            frame = cv2.resize(frame, (800, 600))
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  
-            img = Image.fromarray(frame)  
-            img_tk = ImageTk.PhotoImage(image=img)  
-            self.live_video_label.imgtk = img_tk  
-            self.live_video_label.config(image=img_tk) 
-        self.root.after(10, self.show_frame)  # Refresh frame every 10ms
+        img = Image.open('test3.png')
+        img = img.resize((800, 600))  # Resize image for display inside the evidence section
+        img_tk = ImageTk.PhotoImage(img)
+        self.live_video_label.imgtk = img_tk  
+        self.live_video_label.config(image=img_tk)
+        
+        #ret, frame = live_affinity()  # Read a frame from the video capture
+        #if ret: 
+            #frame = cv2.resize(frame, (800, 600))
+            #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  
+            #img = Image.fromarray(frame)  
+            #img_tk = ImageTk.PhotoImage(image=img)  
+            #self.live_video_label.imgtk = img_tk  
+            #self.live_video_label.config(image=img_tk) 
+        #self.root.after(10, self.show_frame)  # Refresh frame every 10ms
 
     def update_statistics_bar(self):
         """Updates the statistics bar with AI analysis data."""
