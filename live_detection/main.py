@@ -221,21 +221,34 @@ class DeceptionDetectionUI:
 
     def show_frame(self):
         """Handles live video feed updates."""
-        img = Image.open('test3.png')
-        img = img.resize((800, 600))  # Resize image for display inside the evidence section
-        img_tk = ImageTk.PhotoImage(img)
-        self.live_video_label.imgtk = img_tk  
-        self.live_video_label.config(image=img_tk)
+        #img = Image.open('test3.png')
+        #img = img.resize((800, 600))  # Resize image for display inside the evidence section
+        #img_tk = ImageTk.PhotoImage(img)
+        #self.live_video_label.imgtk = img_tk  
+        #self.live_video_label.config(image=img_tk)
         
-        #ret, frame = live_affinity()  # Read a frame from the video capture
-        #if ret: 
-            #frame = cv2.resize(frame, (800, 600))
-            #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  
-            #img = Image.fromarray(frame)  
-            #img_tk = ImageTk.PhotoImage(image=img)  
-            #self.live_video_label.imgtk = img_tk  
-            #self.live_video_label.config(image=img_tk) 
-        #self.root.after(10, self.show_frame)  # Refresh frame every 10ms
+        # Create an instance of the LiveAffinity class
+        live_affinity_instance = LiveAffinity()
+
+        # Capture a frame from the video feed
+        ret, live_frame = self.cap.read()
+
+        # Process the frame using live_affinity to get landmarks and pose
+        if ret:
+            ret, processed_frame = live_affinity_instance.live_affinity(ret, live_frame)
+
+            # Resize and convert the processed frame for displaying in Tkinter
+            processed_frame = cv2.resize(processed_frame, (800, 600))
+            processed_frame = cv2.cvtColor(processed_frame, cv2.COLOR_BGR2RGB)
+            img = Image.fromarray(processed_frame)
+            img_tk = ImageTk.PhotoImage(image=img)
+
+            # Display the frame in the Tkinter label
+            self.live_video_label.imgtk = img_tk
+            self.live_video_label.config(image=img_tk)
+
+        # Refresh frame every 10ms
+        self.root.after(10, self.show_frame)
 
     def update_statistics_bar(self):
         """Updates the statistics bar with AI analysis data."""
