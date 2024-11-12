@@ -274,7 +274,7 @@ class DeceptionDetectionUI:
     def update_statistics_bar(self):
         """Updates the statistics bar with AI analysis data."""
         self.processing_time_var.set(f"{time.time() - self.start_time:.2f}s")
-        self.distance_var.set("1.5m")  # Placeholder
+        self.distance_var.set("0.0cm")  # Placeholder
         self.pupil_var.set("Detected")   # Placeholder
         self.face_var.set("Detected")     # Placeholder
         self.body_var.set("Detected")     # Placeholder
