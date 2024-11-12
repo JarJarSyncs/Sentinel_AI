@@ -235,17 +235,38 @@ class DeceptionDetectionUI:
 
         # Process the frame using live_affinity to get landmarks and pose
         if ret:
-            ret, processed_frame = live_affinity_instance.live_affinity(ret, live_frame)
+            # Mirror the frame
+            mirrored_frame = cv2.flip(live_frame, 1)
+            
+            ret, processed_frame = live_affinity_instance.live_affinity(ret, mirrored_frame)
+            
+            KNOWN_WIDTH = 20.0  # Real-world width of the object in centimeters 
+            FOCAL_LENGTH = 700  # Approximate focal length
 
-            # Resize and convert the processed frame for displaying in Tkinter
-            processed_frame = cv2.resize(processed_frame, (800, 600))
-            processed_frame = cv2.cvtColor(processed_frame, cv2.COLOR_BGR2RGB)
-            img = Image.fromarray(processed_frame)
-            img_tk = ImageTk.PhotoImage(image=img)
+            # Detect a specific object in the frame, e.g., using a face detector
+            gray_frame = cv2.cvtColor(mirrored_frame, cv2.COLOR_BGR2GRAY)
+            face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+            faces = face_cascade.detectMultiScale(gray_frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
 
-            # Display the frame in the Tkinter label
-            self.live_video_label.imgtk = img_tk
-            self.live_video_label.config(image=img_tk)
+            distance = "N/A"
+            if len(faces) > 0:
+                # Get the first detected face
+                (x, y, w, h) = faces[0]
+                # Calculate distance
+                distance = (KNOWN_WIDTH * FOCAL_LENGTH) / w
+                
+                # Update the UI's distance label
+                self.distance_var.set(f"{distance:.2f} cm")
+
+                # Resize and convert the processed frame for displaying in Tkinter
+                processed_frame = cv2.resize(processed_frame, (800, 600))
+                processed_frame = cv2.cvtColor(processed_frame, cv2.COLOR_BGR2RGB)
+                img = Image.fromarray(processed_frame)
+                img_tk = ImageTk.PhotoImage(image=img)
+
+                # Display the frame in the Tkinter label
+                self.live_video_label.imgtk = img_tk
+                self.live_video_label.config(image=img_tk)
 
         # Refresh frame every 10ms
         self.root.after(10, self.show_frame)
