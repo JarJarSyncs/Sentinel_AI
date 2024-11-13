@@ -54,10 +54,6 @@ def draw(live_frame, affinity_frame, holistic, mp_draw, mp_hol, hand_connections
     #image = gpu_frame.download()  # Download image for further processing
     results = holistic.process(image)
     image.flags.writeable = True
-
-    # Check if 'f' is pressed to toggle face landmarks, idk if we need this or not, it's just something i added, doesnt really slow down the program
-    if cv2.waitKey(10) & 0xFF == ord('f'):
-        show_advanced_face_mesh_landmarks = not show_advanced_face_mesh_landmarks  # Toggle the flag
         
     if show_advanced_face_mesh_landmarks and results.face_landmarks:
         mp_draw.draw_landmarks(affinity_frame, results.face_landmarks, mp_hol.FACEMESH_TESSELATION, 
@@ -111,7 +107,7 @@ class SixthEyeNet(nn.ModuleList):
 class LiveAffinity:
     def __init__(self):
         # Flag to show advanced face mesh for end-user to get a more detailed face mesh, purely visual for end user.
-        self.show_advanced_face_mesh_landmarks = False
+        self.show_advanced_face_mesh_landmarks = True
 
         # MediaPipe drawing utilities and holistic model for facial, hand, and pose detections
         self.mp_draw = mp.solutions.drawing_utils
@@ -161,44 +157,49 @@ class LiveAffinity:
         # Initialize a black frame for overlaying landmarks
         black_frame = np.zeros_like(live_frame)
         # Check if 'faces' is None or if a second has passed to re-detect faces
-        if self.faces is None or elapsed_time >= 1:
+        #if self.faces is None or elapsed_time >= 1:
             # Detect faces with RetinaFace model
-            self.faces = self.detector(live_frame, cv=True, threshold=0.5)
-            self.detect_time = time.time()  # Reset detection time after each detection
-        else:
+        #    self.faces = self.detector(live_frame, cv=True, threshold=0.5)
+        #    self.detect_time = time.time()  # Reset detection time after each detection
+        #else:
             # Update bounding box based on previous landmark positions for efficiency
-            self.faces = updated_bbox(self.landmarks)
+        #    self.faces = updated_bbox(self.landmarks)
 
-        if len(self.faces) == 0:
-            print("NO face is detected!")
-            return ret, black_frame
+        #if len(self.faces) == 0:
+        #    print("NO face is detected!")
+        #    return ret, black_frame
         # Predict landmarks based on detected face coordinates
-        self.landmarks = self.predictor(self.faces, live_frame, from_fd=True)
+        #self.landmarks = self.predictor(self.faces, live_frame, from_fd=True)
 
         # Estimate head pose from the detected face
-        pose = self.head_pose_estimator(self.faces, live_frame, input_face_type='tuple', update_dict=True)[0]
+        #pose = self.head_pose_estimator(self.faces, live_frame, input_face_type='tuple', update_dict=True)[0]
 
         # Draw landmarks and pose cube on the black frame
-        black_frame = draw_landmarks(black_frame, self.faces[0][0], self.landmarks[0])
-        self.head_pose_estimator.plot_pose_cube(black_frame, self.faces[0][0], **pose)
+        #black_frame = draw_landmarks(black_frame, self.faces[0][0], self.landmarks[0])
+        #self.head_pose_estimator.plot_pose_cube(black_frame, self.faces[0][0], **pose)
 
+        # Check if 'f' is pressed to toggle face landmarks, idk if we need this or not, it's just something i added, doesnt really slow down the program
+        if cv2.waitKey(10) & 0xFF == ord('f'):
+            self.show_advanced_face_mesh_landmarks = not self.show_advanced_face_mesh_landmarks  # Toggle the flag
         # Draw the final frame with the landmarks and pose estimation
         affinity_frame = draw(
             live_frame, black_frame, self.holistic, self.mp_draw, self.mp_hol,
             self.hand_connections_style, self.custom_connections, 
             self.excluded_pose_landmarks, self.show_advanced_face_mesh_landmarks
         )
-
+        
         input_data = get_input_data(live_frame, self.transformations, self.device, self.model, self.detector)
 
         if input_data is not None:
             if len(input_data) != 0:
                 for face in input_data:
                     draw_eye_gaze(face, self.net, self.device, self.transforms, affinity_frame)
+        else:
+            cv2.putText(affinity_frame, f"No Face Detected!", (200, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
 
         # Calculate and display FPS on the black frame
         fps = 1 / (time.time() - loop_time)
-        cv2.putText(black_frame, f"FPS: {fps:.2f}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
+        cv2.putText(affinity_frame, f"FPS: {fps:.2f}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
 
         return ret, affinity_frame
         ### Release the capture when done ###

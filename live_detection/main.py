@@ -40,7 +40,8 @@ class DeceptionDetectionUI:
 
         # Initialize video capture
         self.cap = cv2.VideoCapture(0)
-
+        # Create an instance of the LiveAffinity class
+        self.live_affinity_instance = LiveAffinity()
         self.captured_images = []
 
         # Create UI sections
@@ -149,7 +150,7 @@ class DeceptionDetectionUI:
         for i, (text, var) in enumerate(labels):
             label = tk.Label(statistics_frame, text=f"{text}: ", font=self.config.font, fg=self.config.widget_color)
             label.grid(row=i + 1, column=0, sticky=tk.W, padx=10, pady=5)
-            value_label = tk.Label(statistics_frame, textvariable=var, font=self.config.font, fg=self.config.highlight_color)
+            value_label = tk.Label(statistics_frame, textvariable=var, font=self.config.font, fg=self.config.highlight_color, width=10)
             value_label.grid(row=i + 1, column=1, sticky=tk.E, padx=5, pady=5)
 
     def create_deception_score_frame(self, parent_frame):
@@ -227,8 +228,7 @@ class DeceptionDetectionUI:
         #self.live_video_label.imgtk = img_tk  
         #self.live_video_label.config(image=img_tk)
         
-        # Create an instance of the LiveAffinity class
-        live_affinity_instance = LiveAffinity()
+        
 
         # Capture a frame from the video feed
         ret, live_frame = self.cap.read()
@@ -238,7 +238,7 @@ class DeceptionDetectionUI:
             # Mirror the frame
             mirrored_frame = cv2.flip(live_frame, 1)
             
-            ret, processed_frame = live_affinity_instance.live_affinity(ret, mirrored_frame)
+            ret, processed_frame = self.live_affinity_instance.live_affinity(ret, mirrored_frame)
             
             KNOWN_WIDTH = 20.0  # Real-world width of the object in centimeters 
             FOCAL_LENGTH = 700  # Approximate focal length
