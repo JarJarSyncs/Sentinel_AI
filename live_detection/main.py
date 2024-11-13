@@ -260,16 +260,6 @@ class DeceptionDetectionUI:
                 
                 # Update the UI's distance label
                 self.distance_var.set(f"{distance:.2f} cm")
-
-                # Resize and convert the processed frame for displaying in Tkinter
-                processed_frame = cv2.resize(processed_frame, (800, 600))
-                processed_frame = cv2.cvtColor(processed_frame, cv2.COLOR_BGR2RGB)
-                img = Image.fromarray(processed_frame)
-                img_tk = ImageTk.PhotoImage(image=img)
-
-                # Display the frame in the Tkinter label
-                self.live_video_label.imgtk = img_tk
-                self.live_video_label.config(image=img_tk)
             else:
                 self.face_var.set("Not Detected")
             
@@ -290,6 +280,16 @@ class DeceptionDetectionUI:
                 self.pupil_var.set("Pupil Detected")
             else:
                 self.pupil_var.set("Not Detected")
+
+            # Resize and convert the processed frame for displaying in Tkinter
+            processed_frame = cv2.resize(processed_frame, (800, 600))
+            processed_frame = cv2.cvtColor(processed_frame, cv2.COLOR_BGR2RGB)
+            img = Image.fromarray(processed_frame)
+            img_tk = ImageTk.PhotoImage(image=img)
+
+            # Display the frame in the Tkinter label
+            self.live_video_label.imgtk = img_tk
+            self.live_video_label.config(image=img_tk)
 
         else:
             print("Failed to capture frame")

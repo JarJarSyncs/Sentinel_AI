@@ -194,6 +194,6 @@ def draw_axis(img, yaw, pitch, roll, tdx=None, tdy=None, size = 100):
 
     #cv2.line(img, (int(tdx), int(tdy)), (int(x1),int(y1)),(0,0,255),4)
     #cv2.line(img, (int(tdx), int(tdy)), (int(x2),int(y2)),(0,255,0),4)
-    cv2.line(img, (int(tdx), int(tdy)), (int(x3),int(y3)),(250,250,0),8)
+    cv2.line(img, (int(tdx), int(tdy)), (int(x3),int(y3)),(250,150,0),8)
 
     return img
