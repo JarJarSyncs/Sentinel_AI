@@ -250,6 +250,9 @@ class DeceptionDetectionUI:
 
             distance = "N/A"
             if len(faces) > 0:
+                # Detected face
+                self.face_var.set("Face Detected")
+
                 # Get the first detected face
                 (x, y, w, h) = faces[0]
                 # Calculate distance
@@ -267,17 +270,36 @@ class DeceptionDetectionUI:
                 # Display the frame in the Tkinter label
                 self.live_video_label.imgtk = img_tk
                 self.live_video_label.config(image=img_tk)
+            else:
+                self.face_var.set("Not Detected")
+            
+            # Body and pupil cascade
+            self.body_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_fullbody.xml')
+            self.eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
+            
+            # Detect bodies
+            bodies = self.body_cascade.detectMultiScale(gray_frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+            if len(bodies) > 0:
+                self.body_var.set("Body Detected")
+            else:
+                self.body_var.set("Not Detected")
 
+            # Detect eyes (for pupil detection)
+            eyes = self.eye_cascade.detectMultiScale(gray_frame, scaleFactor=1.1, minNeighbors=5, minSize=(20, 20))
+            if len(eyes) > 0:
+                self.pupil_var.set("Pupil Detected")
+            else:
+                self.pupil_var.set("Not Detected")
+
+        else:
+            print("Failed to capture frame")
+    
         # Refresh frame every 10ms
         self.root.after(10, self.show_frame)
 
     def update_statistics_bar(self):
         """Updates the statistics bar with AI analysis data."""
         self.processing_time_var.set(f"{time.time() - self.start_time:.2f}s")
-        self.distance_var.set("0.0cm")  # Placeholder
-        self.pupil_var.set("Detected")   # Placeholder
-        self.face_var.set("Detected")     # Placeholder
-        self.body_var.set("Detected")     # Placeholder
         self.effective_detection_var.set("82%")  # Placeholder
         self.deceptive_actions_var.set("5")      # Placeholder
         self.deception_score_var.set("68.4%")    # Placeholder
