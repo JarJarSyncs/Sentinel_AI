@@ -9,6 +9,7 @@ import cv2
 from math import cos, sin
 
 import torch
+torch.backends.cudnn.benchmark = True
 from torchvision import transforms
 from PIL import Image
 from sixdrepnet import utils
@@ -34,7 +35,7 @@ def get_input_data(image, transformations, device, model, detector, offset_coeff
         with torch.no_grad():
             faces = detector(resized_image)
             if len(faces) == 0:
-                print("NO face is detected!")
+                #Sprint("NO face is detected!")
                 return None
             result = []
             for box, landmarks, score in faces:
@@ -72,18 +73,14 @@ def get_input_data(image, transformations, device, model, detector, offset_coeff
 
                 img = torch.Tensor(img[None, :]).to(device)
 
-                c = cv2.waitKey(1)
-                if c == 27:
-                    break
-
                 R_pred = model(img)
 
                 euler = utils.compute_euler_angles_from_rotation_matrices(
                     R_pred)*180/np.pi
 
-                curr = {'p_pred_deg': euler[:, 0].cpu(),
-                        'y_pred_deg': euler[:, 1].cpu(),
-                        'r_pred_deg': euler[:, 2].cpu()
+                curr = {'p_pred_deg': euler[:, 0],
+                        'y_pred_deg': euler[:, 1],
+                        'r_pred_deg': euler[:, 2]
                         }
 
                 offset = abs(((x_3 - x_min2)/2 + (x_max2-x_4)/2)/2)

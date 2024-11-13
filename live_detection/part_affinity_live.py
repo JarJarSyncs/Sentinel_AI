@@ -123,7 +123,8 @@ class LiveAffinity:
         self.excluded_pose_landmarks = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 17, 18, 19, 20, 21, 22, 25, 26, 27, 28, 29, 30, 31, 32]
 
         # Initialize models and detectors
-        self.holistic = self.mp_hol.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5)
+        self.holistic = self.mp_hol.Holistic(smooth_landmarks=True,min_detection_confidence=0.5, min_tracking_confidence=0.5)
+
         self.detector = RetinaFace(gpu_id=0)  # Use gpu_id=-1 for CPU on Mac
         self.predictor = LandmarkPredictor(gpu_id=0)  # Use gpu_id=-1 for CPU on Mac
         self.head_pose_estimator = SixDRep(gpu_id=0)  # Use gpu_id=-1 for CPU on Mac
@@ -145,7 +146,7 @@ class LiveAffinity:
                                      transforms.Resize((70, 210)),
                                      transforms.ToTensor()])
         
-        self.model = SixDRepNet(backbone_name='RepVGG-B1g2',backbone_file='',deploy=True,pretrained=False)
+        self.model = SixDRepNet(backbone_name='RepVGG-A0',backbone_file='',deploy=True,pretrained=False)
         self.model.to(self.device)
 
     def live_affinity(self, ret, live_frame):
@@ -189,7 +190,6 @@ class LiveAffinity:
         )
         
         input_data = get_input_data(live_frame, self.transformations, self.device, self.model, self.detector)
-
         if input_data is not None:
             if len(input_data) != 0:
                 for face in input_data:
