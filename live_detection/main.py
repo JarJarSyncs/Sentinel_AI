@@ -25,7 +25,7 @@ class DeceptionDetectionUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Sentinel AI - Deception Detection")
-        self.root.geometry("1400x1000")
+        self.root.state("zoomed")  # Maximize window on launch
 
         # Load UI configuration
         self.config = UIConfig()
@@ -43,6 +43,16 @@ class DeceptionDetectionUI:
         # Create an instance of the LiveAffinity class
         self.live_affinity_instance = LiveAffinity()
         self.captured_images = []
+        self.last_evidence_update_time = 0
+        self.evidence_container_width = 0
+        self.analysis = False
+        self.capture = True
+
+        # Configure grid weights for expanding sections
+        self.root.grid_rowconfigure(1, weight=1)
+        self.root.grid_columnconfigure(0, weight=2)  # Live video section expands more
+        self.root.grid_columnconfigure(2, weight=1)  # Evidence section expands slightly
+        self.root.grid_columnconfigure(4, weight=0)
 
         # Create UI sections
         self.create_title_section()
@@ -79,12 +89,33 @@ class DeceptionDetectionUI:
         evidence_frame.grid(row=1, column=2, columnspan=2, padx=10, pady=(10, 10), sticky="nsew")
         evidence_frame.grid_rowconfigure(0, weight=1)
         evidence_frame.grid_columnconfigure(0, weight=1)
+        self.evidence_frame = evidence_frame
 
         evidence_label = tk.Label(evidence_frame, text="Captured Deceptive Actions", font=self.config.bold_font, fg=self.config.widget_color)
         evidence_label.pack(anchor="nw")
 
-        self.evidence_image = Label(evidence_frame, text="[sample images]", bg=self.config.accent_color)
-        self.evidence_image.pack(fill="both", expand=True, pady=10)
+        # Create a Canvas and a Scrollbar
+        canvas = tk.Canvas(evidence_frame, bg=self.config.accent_color, width=220)
+        scrollbar = ttk.Scrollbar(evidence_frame, orient="vertical", command=canvas.yview)
+
+        # Configure the canvas
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+
+        # Place the scrollbar and canvas in the frame
+        scrollbar.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+
+        # Create a frame inside the canvas to hold the images
+        self.evidence_container = tk.Frame(canvas, bg=self.config.accent_color)
+        canvas.create_window((0, 0), window=self.evidence_container, anchor="nw")
+
+        # Set a fixed height for the canvas (adjust as needed)
+        canvas.update_idletasks()
+        canvas.config(height=600)
+
+        self.evidence_canvas = canvas 
+        
 
     def create_button_and_statistics_section(self):
         """Creates a parent frame for the button and statistics bar sections."""
@@ -169,8 +200,19 @@ class DeceptionDetectionUI:
         deception_score_value.grid(row=1, column=0, columnspan=2, pady=5, sticky="ew")
 
     def start_analysis(self):
-        print("Starting Analysis...")  # Replace with actual analysis logic
-        self.capture_mock_images_with_descriptions()
+        print("Starting Analysis...")
+        self.analysis = True
+        self.capture = True
+        self.analysis_time = time.time()
+        self.last_evidence_update_time = self.analysis_time
+
+        # Clear the evidence images
+        self.clear_evidence_images()
+
+        # Clear any selected image
+        if hasattr(self, 'selected_image'):
+            del self.selected_image
+        #self.capture_mock_images_with_descriptions()
 
     def capture_mock_images_with_descriptions(self):
         # List of mock image paths and their descriptions
@@ -183,18 +225,39 @@ class DeceptionDetectionUI:
         for image_path, description in mock_images_with_descriptions:
             self.update_evidence_display(image_path, description)
 
-    def update_evidence_display(self, image_path, description="Action"):
-        img = Image.open(image_path)
-        img = img.resize((250, 200))  # Resize image for display inside the evidence section
+    def update_evidence_display(self, image_or_path, description="Action"):
+        if isinstance(image_or_path, str):
+            img = Image.open(image_or_path)
+        else:
+            img = image_or_path
+
+        if self.evidence_container_width != 1:
+            image_width = int(self.evidence_container_width * 0.9)
+            image_height = int(self.evidence_container_width * 0.75)
+        else:
+            image_width = 200
+            image_height = 250
+
+        # Initial resize for display
+        img = img.resize((image_width, image_height))
         img_tk = ImageTk.PhotoImage(img)
 
+        # Store the original image
+        original_img = img.copy()
+
         # Create a new label for each captured image
-        image_label = Label(self.evidence_image, image=img_tk, bg=self.config.accent_color)
+        image_label = tk.Label(self.evidence_container, image=img_tk, bg=self.config.accent_color)
         image_label.image = img_tk  # Keep a reference to avoid garbage collection
 
+        # Store the original image in the label for later use
+        image_label.original_image = original_img
+
+        # Bind click event to image label
+        image_label.bind("<Button-1>", lambda event, img=original_img: self.on_evidence_image_click(img))
+
         # Create a corresponding text label below the image using the description, with red text
-        description_label = Label(self.evidence_image, text=description, bg=self.config.accent_color, 
-                                font=self.config.bold_font, fg="red")  # Make the text bold and red
+        description_label = tk.Label(self.evidence_container, text=description, bg=self.config.accent_color,
+                                    font=self.config.bold_font, fg="red")  # Make the text bold and red
 
         # Place the image and label in the evidence section grid
         row = len(self.captured_images)
@@ -216,9 +279,13 @@ class DeceptionDetectionUI:
                 image_lbl.grid(row=index*2, column=0, padx=5, pady=(1, 2), sticky="w")
                 desc_lbl.grid(row=index*2+1, column=0, padx=5, pady=(1, 10), sticky="ew")
 
+        # Update the canvas scrollregion after adding new widgets
+        self.evidence_canvas.update_idletasks()
+        self.evidence_canvas.config(scrollregion=self.evidence_canvas.bbox("all"))
+
     def stop_analysis(self):
-        """Method to stop the analysis (dummy function)."""
-        print("Analysis stopped.")  
+        print("Analysis stopped.")
+        self.analysis = False
 
     def show_frame(self):
         """Handles live video feed updates."""
@@ -227,83 +294,131 @@ class DeceptionDetectionUI:
         #img_tk = ImageTk.PhotoImage(img)
         #self.live_video_label.imgtk = img_tk  
         #self.live_video_label.config(image=img_tk)
-        
-        
 
-        # Capture a frame from the video feed
-        ret, live_frame = self.cap.read()
+        if self.capture:
+            # Capture a frame from the video feed
+            ret, live_frame = self.cap.read()
 
-        # Process the frame using live_affinity to get landmarks and pose
-        if ret:
-            # Mirror the frame
-            mirrored_frame = cv2.flip(live_frame, 1)
-            
-            ret, processed_frame = self.live_affinity_instance.live_affinity(ret, mirrored_frame)
-            
-            KNOWN_WIDTH = 20.0  # Real-world width of the object in centimeters 
-            FOCAL_LENGTH = 700  # Approximate focal length
+            #hack
+            self.evidence_container_width = self.evidence_frame.winfo_width()
 
-            # Detect a specific object in the frame, e.g., using a face detector
-            gray_frame = cv2.cvtColor(mirrored_frame, cv2.COLOR_BGR2GRAY)
-            face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-            faces = face_cascade.detectMultiScale(gray_frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
-
-            distance = "N/A"
-            if len(faces) > 0:
-                # Detected face
-                self.face_var.set("Face Detected")
-
-                # Get the first detected face
-                (x, y, w, h) = faces[0]
-                # Calculate distance
-                distance = (KNOWN_WIDTH * FOCAL_LENGTH) / w
+            # Process the frame using live_affinity to get landmarks and pose
+            if ret:
+                current_time = time.time()
+                # Mirror the frame
+                mirrored_frame = cv2.flip(live_frame, 1)
                 
-                # Update the UI's distance label
-                self.distance_var.set(f"{distance:.2f} cm")
+                ret, processed_frame = self.live_affinity_instance.live_affinity(ret, mirrored_frame)
+                
+                KNOWN_WIDTH = 20.0  # Real-world width of the object in centimeters 
+                FOCAL_LENGTH = 700  # Approximate focal length
+
+                # Detect a specific object in the frame, e.g., using a face detector
+                gray_frame = cv2.cvtColor(mirrored_frame, cv2.COLOR_BGR2GRAY)
+                face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+                faces = face_cascade.detectMultiScale(gray_frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+
+                distance = "N/A"
+                if len(faces) > 0:
+                    # Detected face
+                    self.face_var.set("Face Detected")
+
+                    # Get the first detected face
+                    (x, y, w, h) = faces[0]
+                    # Calculate distance
+                    distance = (KNOWN_WIDTH * FOCAL_LENGTH) / w
+                    
+                    # Update the UI's distance label
+                    self.distance_var.set(f"{distance:.2f} cm")
+                else:
+                    self.face_var.set("Not Detected")
+                
+                # Body and pupil cascade
+                self.body_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_fullbody.xml')
+                self.eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
+                
+                # Detect bodies
+                bodies = self.body_cascade.detectMultiScale(gray_frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+                if len(bodies) > 0:
+                    self.body_var.set("Body Detected")
+                else:
+                    self.body_var.set("Not Detected")
+
+                # Detect eyes (for pupil detection)
+                eyes = self.eye_cascade.detectMultiScale(gray_frame, scaleFactor=1.1, minNeighbors=5, minSize=(20, 20))
+                if len(eyes) > 0:
+                    self.pupil_var.set("Pupil Detected")
+                else:
+                    self.pupil_var.set("Not Detected")
+
+                print(self.live_video_label.winfo_width())
+                print(self.live_video_label.winfo_height())
+
+                if self.live_video_label.winfo_width() > 1500 and self.live_video_label.winfo_height() > 1200:
+                    width = 1600
+                    height = 1200
+                else:
+                    width = 800
+                    height = 600
+                # Resize and convert the processed frame for displaying in Tkinter
+                processed_frame = cv2.resize(processed_frame, (width, height))
+                processed_frame = cv2.cvtColor(processed_frame, cv2.COLOR_BGR2RGB)
+                img = Image.fromarray(processed_frame)
+                img_tk = ImageTk.PhotoImage(image=img)
+
+                # Display the frame in the Tkinter label
+                self.live_video_label.imgtk = img_tk
+                self.live_video_label.config(image=img_tk)
+
+                # Clear any selected image reference
+                if hasattr(self, 'selected_image'):
+                    del self.selected_image
+
+                if self.analysis == True and len(faces) > 0 and (current_time - self.last_evidence_update_time) > 15:
+                    self.update_evidence_display(img, description="Detected Action")
+                    self.last_evidence_update_time = current_time  # Reset the timer
+
             else:
-                self.face_var.set("Not Detected")
-            
-            # Body and pupil cascade
-            self.body_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_fullbody.xml')
-            self.eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
-            
-            # Detect bodies
-            bodies = self.body_cascade.detectMultiScale(gray_frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
-            if len(bodies) > 0:
-                self.body_var.set("Body Detected")
-            else:
-                self.body_var.set("Not Detected")
-
-            # Detect eyes (for pupil detection)
-            eyes = self.eye_cascade.detectMultiScale(gray_frame, scaleFactor=1.1, minNeighbors=5, minSize=(20, 20))
-            if len(eyes) > 0:
-                self.pupil_var.set("Pupil Detected")
-            else:
-                self.pupil_var.set("Not Detected")
-
-            # Resize and convert the processed frame for displaying in Tkinter
-            processed_frame = cv2.resize(processed_frame, (800, 600))
-            processed_frame = cv2.cvtColor(processed_frame, cv2.COLOR_BGR2RGB)
-            img = Image.fromarray(processed_frame)
-            img_tk = ImageTk.PhotoImage(image=img)
-
-            # Display the frame in the Tkinter label
-            self.live_video_label.imgtk = img_tk
-            self.live_video_label.config(image=img_tk)
-
+                print("Failed to capture frame")
         else:
-            print("Failed to capture frame")
+            pass
     
         # Refresh frame every 10ms
         self.root.after(10, self.show_frame)
 
     def update_statistics_bar(self):
         """Updates the statistics bar with AI analysis data."""
-        self.processing_time_var.set(f"{time.time() - self.start_time:.2f}s")
+        if self.analysis:
+            elapsed_time = time.time() - self.analysis_time
+            self.processing_time_var.set(f"{elapsed_time:.2f}s")
+        else:
+            self.processing_time_var.set("0.00s")
+
         self.effective_detection_var.set("82%")  # Placeholder
         self.deceptive_actions_var.set("5")      # Placeholder
         self.deception_score_var.set("68.4%")    # Placeholder
         self.root.after(1000, self.update_statistics_bar)  # Update every second
+    
+    def on_evidence_image_click(self, img):
+        if not self.analysis:
+            self.capture = False
+            # Resize the image to fit the main video section
+            img_resized = img.resize((800, 600))
+            img_tk = ImageTk.PhotoImage(img_resized)
+            self.live_video_label.imgtk = img_tk
+            self.live_video_label.config(image=img_tk)
+            # Store the selected image
+            self.selected_image = img_tk
+    
+    def clear_evidence_images(self):
+        # Remove all image and description labels from the evidence container
+        for image_label, description_label in self.captured_images:
+            image_label.destroy()
+            description_label.destroy()
+        self.captured_images = []
+        # Update the canvas scrollregion
+        self.evidence_canvas.update_idletasks()
+        self.evidence_canvas.config(scrollregion=self.evidence_canvas.bbox("all"))
 
 # Main execution
 if __name__ == "__main__":
